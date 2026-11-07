@@ -1,0 +1,246 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with display name, unique username, unique user code, and presence status",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "userCode": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "about": { "type": "string" },
+        "isOnline": { "type": "boolean" },
+        "lastSeen": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "displayName", "username", "userCode", "createdAt"]
+    },
+    "UsernameDirectory": {
+      "title": "UsernameDirectory",
+      "description": "Lookup index for unique username discovery",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "userId": { "type": "string" },
+        "userCode": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "userId", "userCode", "displayName", "createdAt"]
+    },
+    "UserCodeDirectory": {
+      "title": "UserCodeDirectory",
+      "description": "Lookup index for unique user code discovery",
+      "type": "object",
+      "properties": {
+        "userCode": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userCode", "userId", "username", "displayName", "createdAt"]
+    },
+    "ContactRequest": {
+      "title": "ContactRequest",
+      "description": "Friend or contact invitation between users",
+      "type": "object",
+      "properties": {
+        "fromUserId": { "type": "string" },
+        "toUserId": { "type": "string" },
+        "fromUsername": { "type": "string" },
+        "fromDisplayName": { "type": "string" },
+        "fromUserCode": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUserId", "toUserId", "fromUsername", "fromDisplayName", "status", "createdAt"]
+    },
+    "UserContact": {
+      "title": "UserContact",
+      "description": "Contact entry in a user's address book",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "contactUserId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "userCode": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "isBlocked": { "type": "boolean" },
+        "isPinned": { "type": "boolean" },
+        "isMuted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "contactUserId", "displayName", "username", "userCode", "createdAt"]
+    },
+    "ChatConversation": {
+      "title": "ChatConversation",
+      "description": "Direct or group chat conversation room",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["direct", "group"] },
+        "memberIds": { "type": "array" },
+        "memberNames": { "type": "object" },
+        "lastMessage": { "type": "string" },
+        "lastMessageSenderId": { "type": "string" },
+        "lastMessageTime": { "type": "string", "format": "date-time" },
+        "unreadCounts": { "type": "object" },
+        "typingUsers": { "type": "array" },
+        "groupName": { "type": "string" },
+        "groupDescription": { "type": "string" },
+        "groupAdminIds": { "type": "array" },
+        "communityId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "memberIds", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message inside a chat conversation",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "audio", "document", "location", "contact"] },
+        "mediaUrl": { "type": "string" },
+        "mediaName": { "type": "string" },
+        "mediaSize": { "type": "number" },
+        "audioDurationSec": { "type": "number" },
+        "replyToMessageId": { "type": "string" },
+        "replyToText": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read"] },
+        "isStarred": { "type": "boolean" },
+        "isDeletedForEveryone": { "type": "boolean" },
+        "reactions": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "senderName", "text", "type", "status", "createdAt"]
+    },
+    "CallSession": {
+      "title": "CallSession",
+      "description": "WebRTC voice or video call signaling session",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string" },
+        "callerName": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "receiverName": { "type": "string" },
+        "callType": { "type": "string", "enum": ["voice", "video"] },
+        "status": { "type": "string", "enum": ["ringing", "accepted", "rejected", "ended", "missed"] },
+        "sdpOffer": { "type": "string" },
+        "sdpAnswer": { "type": "string" },
+        "durationSeconds": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["callerId", "callerName", "receiverId", "receiverName", "callType", "status", "createdAt"]
+    },
+    "StatusUpdate": {
+      "title": "StatusUpdate",
+      "description": "24-hour disappearing story update",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image"] },
+        "caption": { "type": "string" },
+        "text": { "type": "string" },
+        "bgColor": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "viewerIds": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "type", "viewerIds", "createdAt"]
+    },
+    "Community": {
+      "title": "Community",
+      "description": "Community hub containing multiple topic groups and announcements",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "adminId": { "type": "string" },
+        "memberIds": { "type": "array" },
+        "groupIds": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "adminId", "memberIds", "createdAt"]
+    },
+    "CloudBackup": {
+      "title": "CloudBackup",
+      "description": "Encrypted cloud backup metadata and chat snapshot for user account",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "backupTime": { "type": "string", "format": "date-time" },
+        "backupSize": { "type": "number" },
+        "chatCount": { "type": "number" },
+        "messageCount": { "type": "number" },
+        "isEncrypted": { "type": "boolean" },
+        "backupData": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "backupSize", "chatCount", "messageCount", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile with display name, username, user code, and status"
+    },
+    "/usernames/{username}": {
+      "schema": { "$ref": "#/entities/UsernameDirectory" },
+      "description": "Directory for username uniqueness and search"
+    },
+    "/userCodes/{userCode}": {
+      "schema": { "$ref": "#/entities/UserCodeDirectory" },
+      "description": "Directory for user code lookup and discovery"
+    },
+    "/contact_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/ContactRequest" },
+      "description": "Pending and resolved contact requests between users"
+    },
+    "/users/{userId}/contacts/{contactUserId}": {
+      "schema": { "$ref": "#/entities/UserContact" },
+      "description": "Contact book entries for a specific user"
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatConversation" },
+      "description": "Direct and group chat rooms"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages sent within a chat"
+    },
+    "/calls/{callId}": {
+      "schema": { "$ref": "#/entities/CallSession" },
+      "description": "WebRTC voice and video call signaling sessions"
+    },
+    "/status_updates/{statusId}": {
+      "schema": { "$ref": "#/entities/StatusUpdate" },
+      "description": "Disappearing status stories posted by users"
+    },
+    "/communities/{communityId}": {
+      "schema": { "$ref": "#/entities/Community" },
+      "description": "Communities containing organized chat groups"
+    },
+    "/backups/{backupId}": {
+      "schema": { "$ref": "#/entities/CloudBackup" },
+      "description": "Cloud backup snapshots associated with authenticated user"
+    }
+  }
+}

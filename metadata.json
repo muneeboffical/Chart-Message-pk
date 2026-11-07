@@ -1,0 +1,6 @@
+{
+  "name": "Chats Message Pk",
+  "description": "Modern, feature-rich messaging platform with real-time chats, user codes, contacts discovery, calls, status updates, communities, and cloud backup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

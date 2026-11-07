@@ -1,0 +1,207 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 60 &&
+             data.username is string && data.username.size() >= 3 && data.username.size() <= 30 &&
+             data.userCode is string && data.userCode.size() >= 4 && data.userCode.size() <= 20 &&
+             (!('avatarUrl' in data) || data.avatarUrl == null || (data.avatarUrl is string && data.avatarUrl.size() <= 1000000)) &&
+             (!('about' in data) || data.about == null || (data.about is string && data.about.size() <= 200)) &&
+             (!('isOnline' in data) || data.isOnline is bool) &&
+             (!('lastSeen' in data) || data.lastSeen is timestamp) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidUsernameDir(data) {
+      return data.username is string && data.username.size() >= 3 && data.username.size() <= 30 &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.userCode is string && data.userCode.size() >= 4 &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidUserCodeDir(data) {
+      return data.userCode is string && data.userCode.size() >= 4 && data.userCode.size() <= 20 &&
+             data.userId is string && data.userId.size() > 0 &&
+             data.username is string && data.username.size() >= 3 &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidContactRequest(data) {
+      return data.fromUserId is string && data.fromUserId.size() > 0 &&
+             data.toUserId is string && data.toUserId.size() > 0 &&
+             data.fromUsername is string && data.fromUsername.size() > 0 &&
+             data.fromDisplayName is string && data.fromDisplayName.size() > 0 &&
+             data.status in ['pending', 'accepted', 'rejected'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidUserContact(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.contactUserId is string && data.contactUserId.size() > 0 &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             data.username is string && data.username.size() > 0 &&
+             data.userCode is string && data.userCode.size() > 0 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidChat(data) {
+      return data.type in ['direct', 'group'] &&
+             data.memberIds is list && data.memberIds.size() >= 1 && data.memberIds.size() <= 100 &&
+             (!('lastMessage' in data) || data.lastMessage is string) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidChatMessage(data) {
+      return data.chatId is string && data.chatId.size() > 0 &&
+             data.senderId is string && data.senderId.size() > 0 &&
+             data.senderName is string && data.senderName.size() > 0 &&
+             data.text is string && data.text.size() <= 10000 &&
+             data.type in ['text', 'image', 'audio', 'document', 'location', 'contact'] &&
+             data.status in ['sent', 'delivered', 'read'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidCall(data) {
+      return data.callerId is string && data.callerId.size() > 0 &&
+             data.callerName is string && data.callerName.size() > 0 &&
+             data.receiverId is string && data.receiverId.size() > 0 &&
+             data.receiverName is string && data.receiverName.size() > 0 &&
+             data.callType in ['voice', 'video'] &&
+             data.status in ['ringing', 'accepted', 'rejected', 'ended', 'missed'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidStatus(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.userName is string && data.userName.size() > 0 &&
+             data.type in ['text', 'image'] &&
+             data.viewerIds is list && data.viewerIds.size() <= 500 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidCommunity(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.adminId is string && data.adminId.size() > 0 &&
+             data.memberIds is list && data.memberIds.size() >= 1 && data.memberIds.size() <= 500 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidBackup(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.backupSize is number &&
+             data.chatCount is number &&
+             data.messageCount is number &&
+             data.createdAt is timestamp;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 1. User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.auth.uid == userId && incoming().userId == request.auth.uid && isValidUserProfile(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && incoming().userId == existing().userId && isValidUserProfile(incoming());
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      // Contacts subcollection
+      match /contacts/{contactUserId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // 2. Directories for Username and User Code discovery
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidUsernameDir(incoming());
+      allow update: if isSignedIn() && incoming().userId == request.auth.uid && existing().userId == request.auth.uid && isValidUsernameDir(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /userCodes/{userCode} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidUserCodeDir(incoming());
+      allow update: if isSignedIn() && incoming().userId == request.auth.uid && existing().userId == request.auth.uid && isValidUserCodeDir(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // 3. Contact Requests
+    match /contact_requests/{requestId} {
+      allow get, list: if isSignedIn() && (resource.data.fromUserId == request.auth.uid || resource.data.toUserId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().fromUserId == request.auth.uid && isValidContactRequest(incoming());
+      allow update: if isSignedIn() && (existing().toUserId == request.auth.uid || existing().fromUserId == request.auth.uid) && isValidContactRequest(incoming());
+      allow delete: if isSignedIn() && (existing().toUserId == request.auth.uid || existing().fromUserId == request.auth.uid);
+    }
+
+    // 4. Chats and Messages
+    match /chats/{chatId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if isSignedIn() && request.auth.uid in incoming().memberIds && isValidChat(incoming());
+      allow update: if isSignedIn() && request.auth.uid in existing().memberIds && isValidChat(incoming());
+      allow delete: if isSignedIn() && request.auth.uid in existing().memberIds;
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds;
+        allow create: if isSignedIn() && incoming().senderId == request.auth.uid && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds && isValidChatMessage(incoming());
+        allow update: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds && isValidChatMessage(incoming());
+        allow delete: if isSignedIn() && (existing().senderId == request.auth.uid || request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds);
+      }
+    }
+
+    // 5. Calls (WebRTC signaling)
+    match /calls/{callId} {
+      allow get, list: if isSignedIn() && (resource.data.callerId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().callerId == request.auth.uid && isValidCall(incoming());
+      allow update: if isSignedIn() && (existing().callerId == request.auth.uid || existing().receiverId == request.auth.uid) && isValidCall(incoming());
+      allow delete: if isSignedIn() && (existing().callerId == request.auth.uid || existing().receiverId == request.auth.uid);
+    }
+
+    // 6. Status Updates (24h stories)
+    match /status_updates/{statusId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidStatus(incoming());
+      allow update: if isSignedIn() && (existing().userId == request.auth.uid || incoming().diff(existing()).affectedKeys().hasOnly(['viewerIds'])) && isValidStatus(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // 7. Communities
+    match /communities/{communityId} {
+      allow get, list: if isSignedIn() && request.auth.uid in resource.data.memberIds;
+      allow create: if isSignedIn() && incoming().adminId == request.auth.uid && request.auth.uid in incoming().memberIds && isValidCommunity(incoming());
+      allow update: if isSignedIn() && request.auth.uid in existing().memberIds && isValidCommunity(incoming());
+      allow delete: if isSignedIn() && existing().adminId == request.auth.uid;
+    }
+
+    // 8. Backups
+    match /backups/{backupId} {
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidBackup(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isValidBackup(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}
